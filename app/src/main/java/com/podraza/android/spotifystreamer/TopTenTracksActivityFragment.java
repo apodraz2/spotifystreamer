@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
 import kaaes.spotify.webapi.android.models.TracksPager;
 import retrofit.RestAdapter;
+import retrofit.RetrofitError;
 
 
 /**
@@ -118,7 +120,7 @@ public class TopTenTracksActivityFragment extends Fragment {
 
         @Override
         protected List<Track> doInBackground(String... params) {
-
+            Tracks tracks = null;
             if (params.length == 0) return null;
 
             api = new SpotifyApi();
@@ -127,7 +129,12 @@ public class TopTenTracksActivityFragment extends Fragment {
 
             Map<String, Object> paramsMap = new TreeMap<>();
             paramsMap.put("country", "US");
-            Tracks tracks = spotifyService.getArtistTopTrack(params[0], paramsMap);
+
+            try {
+                 tracks = spotifyService.getArtistTopTrack(params[0], paramsMap);
+            } catch (RuntimeException error) {
+                Log.e(LOG_TAG, error.toString());
+            }
 
             return tracks.tracks;
 
@@ -145,7 +152,7 @@ public class TopTenTracksActivityFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Track> tracks) {
-            if(tracks == null) {
+            if(tracks == null || tracks.size() == 0) {
 
                 Toast toast = Toast.makeText(getActivity(), "Top tracks not found", Toast.LENGTH_SHORT);
 

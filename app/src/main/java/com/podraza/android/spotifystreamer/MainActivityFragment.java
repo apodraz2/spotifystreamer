@@ -17,10 +17,12 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,33 +109,18 @@ public class MainActivityFragment extends Fragment {
 
         );
 
-        final EditText editText = (EditText) rootView.findViewById(R.id.edit_artist_text);
+        final SearchView editText = (SearchView) rootView.findViewById(R.id.edit_artist_text);
 
-        editText.addTextChangedListener(new TextWatcher() {
+        editText.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
+            public boolean onQueryTextSubmit(String query) {
+                updateSpotify(query);
+                return true;
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-                if((s.length() > 3) && (sIS == null)) {
-
-                    Log.d(LOG_TAG, s.toString());
-
-                    updateSpotify(s.toString());
-                }
-
-                else {
-
-                }
-
+            public boolean onQueryTextChange(String newText) {
+                return false;
             }
         });
         return rootView;
@@ -166,8 +153,8 @@ public class MainActivityFragment extends Fragment {
 
                 artistsPager = spotifyService.searchArtists(params[0]);
 
-            } catch(RetrofitError retrofitError) {
-                Log.e(LOG_TAG, retrofitError.toString());
+            } catch(RuntimeException error) {
+                Log.e(LOG_TAG, error.toString());
             }
 
             if(artistsPager != null) {
@@ -178,11 +165,6 @@ public class MainActivityFragment extends Fragment {
             }
 
             else {
-                if (toast != null)
-                    toast.cancel();
-
-                toast.makeText(getActivity(), "Artist not found, please refine search.", Toast.LENGTH_SHORT);
-                toast.show();
 
                 return null;
             }
@@ -201,7 +183,7 @@ public class MainActivityFragment extends Fragment {
         protected void onPostExecute(List<Artist> artists) {
 
 
-            if(artists.size() == 0) {
+            if((artists == null) || artists.size() == 0) {
                 if(toast != null) {
                     toast.cancel();
                 }

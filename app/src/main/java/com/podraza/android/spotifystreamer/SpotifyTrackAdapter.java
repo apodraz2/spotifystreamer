@@ -62,28 +62,37 @@ public class SpotifyTrackAdapter extends BaseAdapter {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         View adapterView = convertView;
-
+        ViewHolder holder;
 
         if(adapterView == null) {
             adapterView = inflater.inflate(R.layout.list_item_song, parent, false);
+            holder = new ViewHolder();
+            holder.albumName = (TextView) adapterView.findViewById(R.id.text_album_view);
+            holder.trackName = (TextView) adapterView.findViewById(R.id.text_song_view);
+            holder.imageView = (ImageView) adapterView.findViewById(R.id.image_song_view);
+            adapterView.setTag(holder);
+        } else {
+            holder = (ViewHolder) adapterView.getTag();
         }
 
-        ImageView imageView = (ImageView) adapterView.findViewById(R.id.image_song_view);
+        ImageView imageView = holder.imageView;
         ParcelableTrack track = (ParcelableTrack) this.getItem(position);
 
         if(!(track.imageUrl == null)){
 
-            Picasso.with(context).load(Uri.parse(track.imageUrl)).into(imageView);
+            Picasso.with(context).load(Uri.parse(track.imageUrl))
+                    .resize(200, 200)
+                    .into(imageView);
         } else {
             Picasso.with(context)
                     .load(R.drawable.question_mark)
                     .resize(200, 200)
                     .into(imageView);
         }
-        TextView textView = (TextView) adapterView.findViewById((R.id.text_song_view));
+        TextView textView = holder.trackName;
         textView.setText(track.getTrackName());
 
-        TextView textView2 = (TextView) adapterView.findViewById(R.id.text_album_view);
+        TextView textView2 = holder.albumName;
         textView2.setText(track.getAlbumName());
 
         return adapterView;
@@ -113,5 +122,11 @@ public class SpotifyTrackAdapter extends BaseAdapter {
 
         this.trackList.add(parcelableTrack);
 
+    }
+
+    class ViewHolder {
+        TextView trackName;
+        TextView albumName;
+        ImageView imageView;
     }
 }

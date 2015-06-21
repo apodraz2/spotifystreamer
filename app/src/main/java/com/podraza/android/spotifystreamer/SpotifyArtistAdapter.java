@@ -78,15 +78,25 @@ public class SpotifyArtistAdapter extends BaseAdapter {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         View adapterView = convertView;
+        ViewHolder holder;
 
         if(adapterView == null) {
-                adapterView = inflater.inflate(R.layout.list_item_artist, null);
+            adapterView = inflater.inflate(R.layout.list_item_artist, null);
+            holder = new ViewHolder();
+            holder.artistName = (TextView) adapterView.findViewById(R.id.text_artist_view);
+            holder.artistPic = (ImageView) adapterView.findViewById(R.id.image_artist_view);
+
+            adapterView.setTag(holder);
+        } else {
+            holder = (ViewHolder) convertView.getTag();
         }
 
-        ImageView imageView = (ImageView) adapterView.findViewById(R.id.image_artist_view);
+        ImageView imageView = holder.artistPic;
         ParcelableArtist artist = (ParcelableArtist) this.getItem(position);
         if ((artist.getImageUrl() != null)) {
-            Picasso.with(context).load(Uri.parse(artist.getImageUrl())).into(imageView);
+            Picasso.with(context).load(Uri.parse(artist.getImageUrl()))
+                    .resize(200, 200)
+                    .into(imageView);
         }else {
 
             Picasso.with(context)
@@ -94,7 +104,7 @@ public class SpotifyArtistAdapter extends BaseAdapter {
                     .resize(200, 200)
                     .into(imageView);
         }
-        TextView textView = (TextView) adapterView.findViewById(R.id.text_artist_view);
+        TextView textView = holder.artistName;
         textView.setText(artist.getName());
 
 
@@ -122,6 +132,11 @@ public class SpotifyArtistAdapter extends BaseAdapter {
         ParcelableArtist parcelableArtist = new ParcelableArtist(artistName,artistId, imageUrl);
 
         this.spotifyList.add(parcelableArtist);
+    }
+
+    class ViewHolder {
+        TextView artistName;
+        ImageView artistPic;
     }
 
 }
