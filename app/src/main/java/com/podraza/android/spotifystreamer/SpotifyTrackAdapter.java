@@ -77,10 +77,6 @@ public class SpotifyTrackAdapter extends BaseAdapter {
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
-        } else {
-            Picasso.with(context)
-                    .load(Uri.parse("https://upload.wikimedia.org/wikipedia/commons/5/55/Question_Mark.svg?uselang=gsw"))
-                    .into(imageView);
         }
         TextView textView = (TextView) adapterView.findViewById((R.id.text_song_view));
         textView.setText(track.name);

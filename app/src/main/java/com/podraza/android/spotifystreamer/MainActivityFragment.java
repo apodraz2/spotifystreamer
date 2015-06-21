@@ -1,9 +1,7 @@
 package com.podraza.android.spotifystreamer;
 
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.AsyncTask;
-import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.text.Editable;
@@ -20,7 +18,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,9 +34,7 @@ import kaaes.spotify.webapi.android.models.Pager;
 public class MainActivityFragment extends Fragment {
     private final String LOG_TAG = this.getClass().getSimpleName();
 
-    private SpotifyArtistAdapter mArtistAdapter;
-    private Toast toast;
-    private ListView listView;
+    SpotifyArtistAdapter mArtistAdapter;
 
 
     public MainActivityFragment() {
@@ -52,17 +47,10 @@ public class MainActivityFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // retain this fragment
-        setRetainInstance(true);
-    }
+    public void onStart() {
+        super.onStart();
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        List<ParcelableArtist> artists = mArtistAdapter.getArtists();
-        outState.putParcelableArrayList("artists", (ArrayList<? extends Parcelable>) artists);
-        super.onSaveInstanceState(outState);
+
     }
 
     @Override
@@ -70,69 +58,59 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
+        mArtistAdapter = new SpotifyArtistAdapter(
+                getActivity(),
+                new ArrayList<Artist>());
 
-        Log.d(LOG_TAG, "the saved instance state is null: " + (savedInstanceState == null));
-        if(savedInstanceState != null) {
-            ArrayList<ParcelableArtist> artists = savedInstanceState.getParcelableArrayList("artists");
-            mArtistAdapter = new SpotifyArtistAdapter(
-                    getActivity(),
-                    artists);
-        } else {
+        ListView listView = (ListView) rootView.findViewById(R.id.artist_listView);
+        listView.setAdapter(mArtistAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                            @Override
+                                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                                Intent intent = new Intent(getActivity(), TopTenTracksActivity.class);
 
-            mArtistAdapter = new SpotifyArtistAdapter(
-                    getActivity(),
-                    new ArrayList<ParcelableArtist>());
-            listView = (ListView) rootView.findViewById(R.id.artist_listView);
+                                                intent.putExtra(Intent.EXTRA_TEXT, mArtistAdapter.getArtistId(position));
 
-            listView.setAdapter(mArtistAdapter);
-        }
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                                @Override
-                                                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                                    Intent intent = new Intent(getActivity(), TopTenTracksActivity.class);
-
-                                                    intent.putExtra(Intent.EXTRA_TEXT, mArtistAdapter.getArtistId(position));
-
-                                                    startActivity(intent);
-                                                }
+                                                startActivity(intent);
                                             }
+                                        }
 
-            );
+        );
 
-            final EditText editText = (EditText) rootView.findViewById(R.id.edit_artist_text);
+        final EditText editText = (EditText) rootView.findViewById(R.id.edit_artist_text);
 
-            editText.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
+                if(!(s.length() == 0)) {
+
+                    Log.d(LOG_TAG, s.toString());
+
+                    updateSpotify(s.toString());
+                }
+
+                else {
+                    Toast toast = Toast.makeText(getActivity(), "Empty query", Toast.LENGTH_SHORT);
+
+                    toast.show();
 
                 }
 
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+        });
 
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {
-
-
-                    if (s.length() != 0) {
-
-                        Log.d(LOG_TAG, s.toString());
-
-                        updateSpotify(s.toString());
-                    } else {
-                        if (toast != null)
-                            toast.cancel();
-
-                        toast = Toast.makeText(getActivity(), "Empty query", Toast.LENGTH_SHORT);
-
-                        toast.show();
-
-                    }
-
-                }
-            });
 
 
 
@@ -142,7 +120,8 @@ public class MainActivityFragment extends Fragment {
 
     /**
      * Created by adampodraza on 6/12/15.
-     *
+     * next task: display the spotify json objects
+     * in a pretty way!
      */
     public class QuerySpotifyForArtistsTask extends AsyncTask<String, Void, List<Artist>> {
         private final String LOG_TAG = QuerySpotifyForArtistsTask.class.getSimpleName();
@@ -151,6 +130,8 @@ public class MainActivityFragment extends Fragment {
 
         @Override
         protected List<Artist> doInBackground(String... params) {
+
+            Log.d(LOG_TAG, "The execute method was called with this parameter: " + params[0]);
 
             if (params.length == 0) return null;
 
@@ -169,7 +150,7 @@ public class MainActivityFragment extends Fragment {
         }
 
         //helper method to add artists to the adapter
-        private void addArtists(List<Artist> artists) throws MalformedURLException {
+        private void addArtists(List<Artist> artists) {
             for(Artist artist : artists) {
                 mArtistAdapter.addArtist(artist);
 
@@ -180,11 +161,9 @@ public class MainActivityFragment extends Fragment {
         protected void onPostExecute(List<Artist> artists) {
 
 
-            if(artists.isEmpty()) {
-                if(toast != null)
-                    toast.cancel();
+            if(artists == null) {
 
-                toast = Toast.makeText(getActivity(), "Artist not found, please refine search.", Toast.LENGTH_SHORT);
+                Toast toast = Toast.makeText(getActivity(), "Artist not found", Toast.LENGTH_SHORT);
 
                 toast.show();
 
@@ -192,11 +171,7 @@ public class MainActivityFragment extends Fragment {
 
             else{
                 mArtistAdapter.clear();
-                try {
-                    addArtists(artists);
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
+                addArtists(artists);
             }
         }
     }
