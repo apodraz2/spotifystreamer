@@ -5,6 +5,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,14 +38,18 @@ public class SpotifyArtistAdapter extends BaseAdapter {
     private String LOG_TAG = SpotifyArtistAdapter.class.getSimpleName();
 
     private Context context;
-    private ArrayList<Artist> spotifyList;
+    private ArrayList<Parcelable> spotifyList;
 
 
 
-    SpotifyArtistAdapter(Context context, ArrayList<Artist> spotifyList) {
+    SpotifyArtistAdapter(Context context, ArrayList<Parcelable> spotifyList) {
         this.context = context;
         this.spotifyList = spotifyList;
 
+    }
+
+    public ArrayList<Parcelable> getSpotifyList() {
+        return this.spotifyList;
     }
 
     @Override
@@ -52,7 +58,7 @@ public class SpotifyArtistAdapter extends BaseAdapter {
     }
 
     @Override
-    public Artist getItem(int position) {
+    public Parcelable getItem(int position) {
         return spotifyList.get(position);
     }
 
@@ -62,12 +68,13 @@ public class SpotifyArtistAdapter extends BaseAdapter {
     }
 
     public String getArtistId(int position) {
-        Artist artist = this.getItem(position);
-        return artist.id;
+        ParcelableArtist artist = (ParcelableArtist) this.getItem(position);
+        return artist.getId();
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         View adapterView = convertView;
@@ -77,16 +84,18 @@ public class SpotifyArtistAdapter extends BaseAdapter {
         }
 
         ImageView imageView = (ImageView) adapterView.findViewById(R.id.image_artist_view);
-        Artist artist = this.getItem(position);
-        if (!(artist.images == null)) {
-            try {
-                Picasso.with(context).load(Uri.parse(getCorrectImage(artist.images))).into(imageView);
-            } catch (MalformedURLException e) {
-                    e.printStackTrace();
-            }
+        ParcelableArtist artist = (ParcelableArtist) this.getItem(position);
+        if ((artist.getImageUrl() != null)) {
+            Picasso.with(context).load(Uri.parse(artist.getImageUrl())).into(imageView);
+        }else {
+
+            Picasso.with(context)
+                    .load(R.drawable.question_mark)
+                    .resize(200, 200)
+                    .into(imageView);
         }
         TextView textView = (TextView) adapterView.findViewById(R.id.text_artist_view);
-        textView.setText(artist.name);
+        textView.setText(artist.getName());
 
 
         return adapterView;
@@ -99,16 +108,20 @@ public class SpotifyArtistAdapter extends BaseAdapter {
             }
         }
 
-        return "https://upload.wikimedia.org/wikipedia/commons/5/55/Question_Mark.svg?uselang=gsw";
+        return null;
     }
 
     public void clear() {
         spotifyList.clear();
     }
 
-    public void addArtist(Artist artist) {
+    public void addArtist(Artist artist) throws MalformedURLException {
+        String artistName = artist.name;
+        String imageUrl = getCorrectImage(artist.images);
+        String artistId = artist.id;
+        ParcelableArtist parcelableArtist = new ParcelableArtist(artistName,artistId, imageUrl);
 
-        this.spotifyList.add(artist);
+        this.spotifyList.add(parcelableArtist);
     }
 
 }

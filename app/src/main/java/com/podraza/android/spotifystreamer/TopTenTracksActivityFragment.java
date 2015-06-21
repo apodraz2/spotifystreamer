@@ -2,6 +2,7 @@ package com.podraza.android.spotifystreamer;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +15,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,40 +45,64 @@ public class TopTenTracksActivityFragment extends Fragment {
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("trackList", mSpotifyAdapter.getTrackList());
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d(LOG_TAG, "1");
-        mSpotifyAdapter = new SpotifyTrackAdapter(
-                getActivity(),
-                new ArrayList<Track>()
 
-        );
+
+        final Bundle sIS = savedInstanceState;
 
         View rootView = inflater.inflate(R.layout.fragment_top_ten_tracks, container, false);
 
         listView = (ListView) rootView.findViewById(R.id.tracklist_view);
 
-        listView.setAdapter(mSpotifyAdapter);
+
+        if(savedInstanceState != null) {
+
+            ArrayList<Parcelable> trackList = savedInstanceState.getParcelableArrayList("trackList");
+
+            mSpotifyAdapter = new SpotifyTrackAdapter(
+                    getActivity(),
+                    trackList
+            );
+
+
+            listView.setAdapter(mSpotifyAdapter);
+        } else {
+
+            mSpotifyAdapter = new SpotifyTrackAdapter(
+                    getActivity(),
+                    new ArrayList<Parcelable>());
+
+            listView.setAdapter(mSpotifyAdapter);
+        }
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getActivity(), NowPlayingActivity.class);
 
-                intent.putExtra(Intent.EXTRA_TEXT, mSpotifyAdapter.getItem(position).preview_url);
+                ParcelableTrack parcelableTrack = (ParcelableTrack) mSpotifyAdapter.getItem(position);
+                intent.putExtra(Intent.EXTRA_TEXT, parcelableTrack.getPreviewUrl());
 
                 startActivity(intent);
             }
         });
 
-                updateSpotify(getActivity().getIntent().getStringExtra(Intent.EXTRA_TEXT));
+        if(sIS == null) {
+            updateSpotify(getActivity().getIntent().getStringExtra(Intent.EXTRA_TEXT));
+        }
         return rootView;
     }
 
 
 
     private void updateSpotify(String artistId) {
-        Log.d(LOG_TAG, "2");
 
         QuerySpotifyForTracksTask querySpotifyForTracksTask = new QuerySpotifyForTracksTask();
         querySpotifyForTracksTask.execute(artistId);
@@ -93,10 +119,6 @@ public class TopTenTracksActivityFragment extends Fragment {
         @Override
         protected List<Track> doInBackground(String... params) {
 
-            Log.d(LOG_TAG, "3");
-
-            Log.d(LOG_TAG, "The execute method was called with this parameter: " + params[0]);
-
             if (params.length == 0) return null;
 
             api = new SpotifyApi();
@@ -112,8 +134,8 @@ public class TopTenTracksActivityFragment extends Fragment {
         }
 
         //helper method to add artists to the adapter
-        private void addTracks(List<Track> tracks) {
-            Log.d(LOG_TAG, "5");
+        private void addTracks(List<Track> tracks) throws MalformedURLException {
+
             for(Track track : tracks) {
                 mSpotifyAdapter.addTrack(track);
 
@@ -123,8 +145,6 @@ public class TopTenTracksActivityFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Track> tracks) {
-
-            Log.d(LOG_TAG, "4");
             if(tracks == null) {
 
                 Toast toast = Toast.makeText(getActivity(), "Top tracks not found", Toast.LENGTH_SHORT);
@@ -136,7 +156,11 @@ public class TopTenTracksActivityFragment extends Fragment {
             else{
 
                 listView.setAdapter(mSpotifyAdapter);
-                addTracks(tracks);
+                try {
+                    addTracks(tracks);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

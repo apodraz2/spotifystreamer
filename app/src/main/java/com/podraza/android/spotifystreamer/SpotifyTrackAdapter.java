@@ -2,6 +2,7 @@ package com.podraza.android.spotifystreamer;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,7 +17,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Track;
 
@@ -27,12 +27,16 @@ public class SpotifyTrackAdapter extends BaseAdapter {
     private String LOG_TAG = this.getClass().getSimpleName();
 
     private Context context;
-    private List<Track> trackList;
+    private ArrayList<Parcelable> trackList;
 
 
-    SpotifyTrackAdapter(Context context, List<Track> trackList) {
+    SpotifyTrackAdapter(Context context, ArrayList<Parcelable> trackList) {
         this.context = context;
         this.trackList = trackList;
+    }
+
+    public ArrayList<Parcelable> getTrackList() {
+        return this.trackList;
     }
 
     @Override
@@ -42,17 +46,14 @@ public class SpotifyTrackAdapter extends BaseAdapter {
     }
 
     @Override
-    public Track getItem(int position) {
+    public Parcelable getItem(int position) {
+
         return trackList.get(position);
     }
 
     @Override
     public long getItemId(int position) {
         return position;
-    }
-
-    public String getTrackId(int position) {
-        return this.getItem(position).id;
     }
 
     @Override
@@ -68,21 +69,22 @@ public class SpotifyTrackAdapter extends BaseAdapter {
         }
 
         ImageView imageView = (ImageView) adapterView.findViewById(R.id.image_song_view);
-        Track track = this.getItem(position);
+        ParcelableTrack track = (ParcelableTrack) this.getItem(position);
 
-        if(!(track.album.images == null)){
-            Log.d(LOG_TAG, track.album.images.get(0).url);
-            try {
-                Picasso.with(context).load(Uri.parse(getCorrectImage(track.album.images))).into(imageView);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+        if(!(track.imageUrl == null)){
+
+            Picasso.with(context).load(Uri.parse(track.imageUrl)).into(imageView);
+        } else {
+            Picasso.with(context)
+                    .load(R.drawable.question_mark)
+                    .resize(200, 200)
+                    .into(imageView);
         }
         TextView textView = (TextView) adapterView.findViewById((R.id.text_song_view));
-        textView.setText(track.name);
+        textView.setText(track.getTrackName());
 
         TextView textView2 = (TextView) adapterView.findViewById(R.id.text_album_view);
-        textView2.setText(track.album.name);
+        textView2.setText(track.getAlbumName());
 
         return adapterView;
     }
@@ -94,16 +96,22 @@ public class SpotifyTrackAdapter extends BaseAdapter {
             }
         }
 
-        return "https://upload.wikimedia.org/wikipedia/commons/5/55/Question_Mark.svg?uselang=gsw";
+        return null;
     }
 
     public void clear() {
         this.trackList.clear();
     }
 
-    public void addTrack(Track track) {
-        Log.d(LOG_TAG, "6");
-        this.trackList.add(track);
+    public void addTrack(Track track) throws MalformedURLException {
+        String trackName = track.name;
+        String albumName = track.album.name;
+        String previewUrl = track.preview_url;
+        String imageUrl = getCorrectImage(track.album.images);
+
+        ParcelableTrack parcelableTrack = new ParcelableTrack(trackName, albumName, imageUrl, previewUrl);
+
+        this.trackList.add(parcelableTrack);
 
     }
 }
