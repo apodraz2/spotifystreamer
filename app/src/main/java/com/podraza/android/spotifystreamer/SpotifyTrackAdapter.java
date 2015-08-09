@@ -112,13 +112,14 @@ public class SpotifyTrackAdapter extends BaseAdapter {
         this.trackList.clear();
     }
 
-    public void addTrack(Track track) throws MalformedURLException {
+    public void addTrack(String artist, Track track) throws MalformedURLException {
+        String artistName = track.artists.get(0).name;
         String trackName = track.name;
         String albumName = track.album.name;
         String previewUrl = track.preview_url;
         String imageUrl = getCorrectImage(track.album.images);
 
-        ParcelableTrack parcelableTrack = new ParcelableTrack(trackName, albumName, imageUrl, previewUrl);
+        ParcelableTrack parcelableTrack = new ParcelableTrack(trackName, albumName, imageUrl, previewUrl, artistName);
 
         this.trackList.add(parcelableTrack);
 

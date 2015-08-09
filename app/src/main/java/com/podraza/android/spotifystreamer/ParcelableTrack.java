@@ -2,22 +2,41 @@ package com.podraza.android.spotifystreamer;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 /**
  * Created by adampodraza on 6/21/15.
  */
 public class ParcelableTrack implements Parcelable {
+    private final String LOG_TAG = this.getClass().getSimpleName();
 
+    String artistName;
     String trackName;
     String albumName;
     String imageUrl;
     String previewUrl;
 
-    ParcelableTrack(String trackName, String albumName, String imageUrl, String previewUrl) {
+    ParcelableTrack(String trackName, String albumName, String imageUrl, String previewUrl, String artistName) {
         this.trackName = trackName;
         this.albumName = albumName;
         this.imageUrl = imageUrl;
         this.previewUrl = previewUrl;
+        this.artistName = artistName;
+    }
+    ParcelableTrack (Parcel source){
+      /*
+       * Reconstruct from the Parcel. Keep same order as in writeToParcel()
+       */
+        trackName = source.readString();
+        Log.d(LOG_TAG, trackName);
+        artistName = source.readString();
+        Log.d(LOG_TAG, artistName);
+        imageUrl = source.readString();
+        Log.d(LOG_TAG, imageUrl);
+        previewUrl = source.readString();
+        Log.d(LOG_TAG, previewUrl);
+        albumName = source.readString();
+        Log.d(LOG_TAG, albumName);
     }
 
     public String getTrackName() {
@@ -62,6 +81,19 @@ public class ParcelableTrack implements Parcelable {
         dest.writeString(trackName);
         dest.writeString(albumName);
         dest.writeString(imageUrl);
+        dest.writeString(previewUrl);
+        dest.writeString(artistName);
 
     }
+
+    public static final Parcelable.Creator<ParcelableTrack> CREATOR
+            = new Parcelable.Creator<ParcelableTrack>() {
+        public ParcelableTrack createFromParcel(Parcel in) {
+            return new ParcelableTrack(in);
+        }
+
+        public ParcelableTrack[] newArray(int size) {
+            return new ParcelableTrack[size];
+        }
+    };
 }

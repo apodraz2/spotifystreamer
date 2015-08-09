@@ -2,6 +2,7 @@ package com.podraza.android.spotifystreamer;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
@@ -46,6 +47,10 @@ public class MainActivityFragment extends Fragment {
 
     private Toast toast;
 
+    public interface Callback {
+        public void onItemSelected(String searchParam);
+    }
+
 
     public MainActivityFragment() {
     }
@@ -66,7 +71,7 @@ public class MainActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        //Log.d(LOG_TAG, "onCreateView called");
+        Log.d(LOG_TAG, "onCreateView called");
 
         final Bundle sIS = savedInstanceState;
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -99,11 +104,18 @@ public class MainActivityFragment extends Fragment {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                                             @Override
                                             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                                Intent intent = new Intent(getActivity(), TopTenTracksActivity.class);
+                                                Log.d(LOG_TAG, "onItemClick with param: " + mArtistAdapter.getArtistId(position));
+
+                                                //when item in list is clicked, callback to
+                                                //main activity with the parameter chosen
+                                                ((Callback) getActivity())
+                                                        .onItemSelected(mArtistAdapter.getArtistId(position));
+
+                                                /**Intent intent = new Intent(getActivity(), TopTenTracksActivity.class);
 
                                                 intent.putExtra(Intent.EXTRA_TEXT, mArtistAdapter.getArtistId(position));
 
-                                                startActivity(intent);
+                                                startActivity(intent);**/
                                             }
                                         }
 

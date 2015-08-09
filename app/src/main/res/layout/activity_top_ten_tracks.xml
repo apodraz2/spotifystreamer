@@ -1,6 +1,6 @@
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/fragment"
+    android:id="@+id/track_list_container"
     android:name="com.podraza.android.spotifystreamer.TopTenTracksActivityFragment"
     tools:layout="@layout/fragment_top_ten_tracks"
     android:layout_width="match_parent"
