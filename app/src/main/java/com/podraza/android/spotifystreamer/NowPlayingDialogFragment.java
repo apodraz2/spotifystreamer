@@ -1,15 +1,13 @@
 package com.podraza.android.spotifystreamer;
 
-import android.graphics.drawable.Drawable;
+import android.app.DialogFragment;
+import android.app.Fragment;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,11 +22,11 @@ import com.squareup.picasso.Picasso;
 import java.io.IOException;
 import java.util.ArrayList;
 
-
 /**
- * A placeholder fragment containing a simple view.
+ * Created by adampodraza on 8/10/15.
  */
-public class NowPlayingActivityFragment extends Fragment {
+public class NowPlayingDialogFragment extends DialogFragment {
+
     private final String LOG_TAG = this.getClass().getSimpleName();
 
     private MediaPlayer mediaPlayer;
@@ -44,10 +42,6 @@ public class NowPlayingActivityFragment extends Fragment {
 
     private View rootView;
 
-    public NowPlayingActivityFragment() {
-
-
-    }
 
     //Error when playing after a pause
     @Override
@@ -56,14 +50,16 @@ public class NowPlayingActivityFragment extends Fragment {
 
         Log.d(LOG_TAG, "onCreateView");
 
+        //args contains the data from toptentracks
+        Bundle args = getArguments();
+
         rootView = inflater.inflate(R.layout.fragment_now_playing, container, false);
 
-
-
+        //instantiate the fields for playback
         if(tracks == null) {
             Log.d(LOG_TAG, "tracks equaled null: " + (tracks == null));
-            tracks = getActivity().getIntent().getParcelableArrayListExtra("tracks");
-            position = getActivity().getIntent().getIntExtra("position", 0);
+            tracks = args.getParcelableArrayList("tracks");
+            position = args.getInt("position", 0);
             track = (ParcelableTrack) tracks.get(position);
         }
 
@@ -185,7 +181,7 @@ public class NowPlayingActivityFragment extends Fragment {
 
                     playButton.setImageResource(android.R.drawable.ic_media_play);
                     playPause = true;
-                    //nullifyMediaPlayer();
+
                 }
             }
         });

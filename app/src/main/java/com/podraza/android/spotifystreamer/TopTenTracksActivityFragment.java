@@ -1,5 +1,6 @@
 package com.podraza.android.spotifystreamer;
 
+import android.app.DialogFragment;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -101,13 +102,33 @@ public class TopTenTracksActivityFragment extends Fragment {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(getActivity(), NowPlayingActivity.class);
 
-                ArrayList<Parcelable> tracks =  mSpotifyAdapter.getTrackList();
-                intent.putParcelableArrayListExtra("tracks", tracks);
-                intent.putExtra("position", position);
+                //detect whether device is tablet
+                if(getResources().getBoolean(R.bool.isTablet)) {
+                    //create a new bundle and put the data necessary for playback in it
+                    Bundle args = new Bundle();
+                    ArrayList<Parcelable> tracks = mSpotifyAdapter.getTrackList();
+                    args.putParcelableArrayList("tracks", tracks);
+                    args.putInt("position", position);
 
-                startActivity(intent);
+                    //instantiate new dialog fragment
+                    DialogFragment dialogFragment = new NowPlayingDialogFragment();
+
+                    dialogFragment.setArguments(args);
+
+                    //show the dialog fragment on a tablet
+                    dialogFragment.show(getActivity().getFragmentManager(), "dialog");
+
+                } else {
+                    //if the device is not a tablet, simply start and create a new activity
+                    Intent intent = new Intent(getActivity(), NowPlayingActivity.class);
+
+                    ArrayList<Parcelable> tracks = mSpotifyAdapter.getTrackList();
+                    intent.putParcelableArrayListExtra("tracks", tracks);
+                    intent.putExtra("position", position);
+
+                    startActivity(intent);
+                }
             }
         });
 
