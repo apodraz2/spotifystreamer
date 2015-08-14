@@ -1,5 +1,9 @@
 package com.podraza.android.spotifystreamer;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -30,8 +34,10 @@ import java.util.ArrayList;
  */
 public class NowPlayingActivityFragment extends Fragment {
     private final String LOG_TAG = this.getClass().getSimpleName();
+    private static final String ACTION_PLAY = "PLAY";
+    private static final String ACTION_PAUSE = "PAUSE";
+    private static final String ACTION_SEEK = "SEEK";
 
-    private MediaPlayer mediaPlayer;
     private boolean playPause = false;
     int mediaPlayerPosition = 0;
 
@@ -44,14 +50,19 @@ public class NowPlayingActivityFragment extends Fragment {
 
     private View rootView;
 
+    String pURL = null;
+
+    // Flag if receiver is registered
+    private boolean mReceiversRegistered = false;
+    // Define a handler and a broadcast receiver
+    private final Handler mHandler = new Handler();
+
     public NowPlayingActivityFragment() {
 
 
     }
 
     //Prevent errors when orientation changes
-
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
         Log.d(LOG_TAG, "onSaveInstanceState");
@@ -60,6 +71,40 @@ public class NowPlayingActivityFragment extends Fragment {
         outState.putInt("mediaPlayerPosition", mediaPlayerPosition);
         //nullifyMediaPlayer();
         super.onSaveInstanceState(outState);
+    }
+
+    private void manageMediaPlayer(String action) {
+        Intent intent = new Intent(getActivity(), MediaPlayerService.class);
+        intent.setAction(action);
+        intent.putExtra("pURL", pURL);
+        intent.putExtra("mediaPlayerPosition", mediaPlayerPosition);
+        getActivity().startService(intent);
+    }
+
+    private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            if(intent.getAction().equals(MediaPlayerService.CUSTOM_INTENT)) {
+                seekBar = (SeekBar) getActivity().findViewById(R.id.now_playing_seek_bar);
+
+                mediaPlayerPosition = intent.getIntExtra("position", 0);
+
+                seekBar.setProgress(mediaPlayerPosition/1000);
+            }
+        }
+    };
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // Register Sync Recievers
+        IntentFilter intentToReceiveFilter = new IntentFilter();
+        intentToReceiveFilter.addAction(MediaPlayerService.CUSTOM_INTENT);
+        getActivity().registerReceiver(mIntentReceiver, intentToReceiveFilter, null, mHandler);
+        mReceiversRegistered = true;
     }
 
     @Override
@@ -82,29 +127,22 @@ public class NowPlayingActivityFragment extends Fragment {
             tracks = getActivity().getIntent().getParcelableArrayListExtra("tracks");
             position = getActivity().getIntent().getIntExtra("position", 0);
             track = (ParcelableTrack) tracks.get(position);
+            pURL = track.getPreviewUrl();
+            manageMediaPlayer(ACTION_PLAY);
         }
 
         rootView = refreshView(track, rootView);
-
-        final String pURL = track.getPreviewUrl();
-
-        mediaPlayer = new MediaPlayer();
-
-        PlaySongTask playSongTask = new PlaySongTask();
-        playSongTask.execute(pURL);
 
         ImageButton nextButton = (ImageButton) rootView.findViewById(R.id.next_button);
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null) {
-                    mediaPlayer.pause();
-                }
+                manageMediaPlayer(ACTION_PAUSE);
                 mediaPlayerPosition = 0;
                 playPause = true;
                 playButton.setImageResource(android.R.drawable.ic_media_play);
-                nullifyMediaPlayer();
-                if(position == (tracks.size()-1)) {
+
+                if (position == (tracks.size() - 1)) {
 
                     position = 0;
                     track = (ParcelableTrack) tracks.get(position);
@@ -124,16 +162,14 @@ public class NowPlayingActivityFragment extends Fragment {
         prevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null) {
-                    mediaPlayer.pause();
-                }
+                manageMediaPlayer(ACTION_PAUSE);
                 mediaPlayerPosition = 0;
                 playPause = true;
                 playButton.setImageResource(android.R.drawable.ic_media_play);
-                nullifyMediaPlayer();
-                if(position == 0) {
 
-                    position = tracks.size()-1;
+                if (position == 0) {
+
+                    position = tracks.size() - 1;
                     track = (ParcelableTrack) tracks.get(position);
 
                     rootView = refreshView(track, rootView);
@@ -151,17 +187,8 @@ public class NowPlayingActivityFragment extends Fragment {
         return rootView;
     }
 
-    void nullifyMediaPlayer() {
-
-        if(mediaPlayer != null) {
-            mediaPlayer.pause();
-            mediaPlayer.reset();
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-    }
-
     View refreshView(ParcelableTrack track, View rootView) {
+        final MediaPlayer mediaPlayer = MediaPlayerService.getmMediaPlayer();
 
         TextView artistText = (TextView) rootView.findViewById(R.id.now_playing_artist_name);
         artistText.setText(track.artistName);
@@ -187,6 +214,7 @@ public class NowPlayingActivityFragment extends Fragment {
 
         seekBar = (SeekBar) rootView.findViewById(R.id.now_playing_seek_bar);
 
+
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -195,8 +223,9 @@ public class NowPlayingActivityFragment extends Fragment {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                mediaPlayer.seekTo(seekBar.getThumbOffset());
+
                 mediaPlayerPosition = seekBar.getThumbOffset();
+                manageMediaPlayer(ACTION_SEEK);
             }
 
             @Override
@@ -205,7 +234,7 @@ public class NowPlayingActivityFragment extends Fragment {
             }
         });
 
-        final String pURL = track.getPreviewUrl();
+        pURL = track.getPreviewUrl();
 
         playButton = (ImageButton) rootView.findViewById(R.id.play_button);
         playButton.setOnClickListener(new View.OnClickListener() {
@@ -213,22 +242,20 @@ public class NowPlayingActivityFragment extends Fragment {
             public void onClick(View v) {
 
                 if (playPause) {
-                    if (mediaPlayer == null) {
-                        mediaPlayer = new MediaPlayer();
-                    }
+
+                    manageMediaPlayer(ACTION_PLAY);
                     Log.d(LOG_TAG, "pressed play");
-                    PlaySongTask playSongTask = new PlaySongTask();
-                    playSongTask.execute(pURL);
+
                     playButton.setImageResource(android.R.drawable.ic_media_pause);
                     playPause = false;
 
 
                 } else {
-                    mediaPlayer.pause();
+                    manageMediaPlayer(ACTION_PAUSE);
 
                     playButton.setImageResource(android.R.drawable.ic_media_play);
                     playPause = true;
-                    //nullifyMediaPlayer();
+
                 }
             }
         });
@@ -239,63 +266,18 @@ public class NowPlayingActivityFragment extends Fragment {
     @Override
     public void onPause() {
         Log.d(LOG_TAG, "onPause");
-        mediaPlayerPosition = mediaPlayer.getCurrentPosition();
-        nullifyMediaPlayer();
+        MediaPlayer mediaPlayer = MediaPlayerService.getmMediaPlayer();
+        if(mediaPlayer != null) {
+            mediaPlayerPosition = mediaPlayer.getCurrentPosition();
+        }
+        //manageMediaPlayer(ACTION_PAUSE);
+
+        if(mReceiversRegistered) {
+            getActivity().unregisterReceiver(mIntentReceiver);
+            mReceiversRegistered = false;
+        }
+
         super.onPause();
 
-    }
-
-    //Should have subtitle controller already set?
-    class PlaySongTask extends AsyncTask {
-        private final String LOG_TAG = this.getClass().getSimpleName();
-
-
-        @Override
-        protected Object doInBackground(Object[] params) {
-
-            Log.d(LOG_TAG, "The preview url is: " + params[0]);
-
-            if(mediaPlayer == null) {
-                mediaPlayer = new MediaPlayer();
-            }
-
-            //Streaming
-            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            try {
-                mediaPlayer.setDataSource((String) params[0]);
-
-                if(mediaPlayer != null) {
-                    mediaPlayer.prepare();
-                    mediaPlayer.start();
-
-                    if (!(mediaPlayerPosition == 0)) {
-                        mediaPlayer.seekTo(mediaPlayerPosition);
-                    }
-
-                    //Log.d(LOG_TAG, "the media player is playing: " + mediaPlayer.isPlaying());
-                    while (mediaPlayer != null) {
-                        seekBar.setProgress(mediaPlayer.getCurrentPosition() / 1000);
-
-
-
-                    }
-
-
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Object o) {
-            super.onPostExecute(o);
-
-            //nullifyMediaPlayer();
-
-        }
     }
 }

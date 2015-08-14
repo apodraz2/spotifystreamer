@@ -1,7 +1,10 @@
 package com.podraza.android.spotifystreamer;
 
 import android.app.DialogFragment;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Parcelable;
@@ -57,10 +60,21 @@ public class TopTenTracksActivityFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
+        if(!getResources().getBoolean(R.bool.isTablet)) {
+            Intent intent = new Intent(getActivity(), MediaPlayerService.class);
+            intent.setAction("PAUSE");
+            getActivity().startService(intent);
+        }
         String searchParam = null;
         Bundle args = getArguments();
 
@@ -103,31 +117,41 @@ public class TopTenTracksActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                //detect whether device is tablet
-                if(getResources().getBoolean(R.bool.isTablet)) {
-                    //create a new bundle and put the data necessary for playback in it
-                    Bundle args = new Bundle();
-                    ArrayList<Parcelable> tracks = mSpotifyAdapter.getTrackList();
-                    args.putParcelableArrayList("tracks", tracks);
-                    args.putInt("position", position);
-
-                    //instantiate new dialog fragment
-                    DialogFragment dialogFragment = new NowPlayingDialogFragment();
-
-                    dialogFragment.setArguments(args);
-
-                    //show the dialog fragment on a tablet
-                    dialogFragment.show(getActivity().getFragmentManager(), "dialog");
-
+                if(!isNetworkAvailable()) {
+                    Toast toast = Toast.makeText(
+                            getActivity().getApplicationContext(),
+                            "No network connection, please try again",
+                            Toast.LENGTH_SHORT);
+                    toast.show();
                 } else {
-                    //if the device is not a tablet, simply start and create a new activity
-                    Intent intent = new Intent(getActivity(), NowPlayingActivity.class);
 
-                    ArrayList<Parcelable> tracks = mSpotifyAdapter.getTrackList();
-                    intent.putParcelableArrayListExtra("tracks", tracks);
-                    intent.putExtra("position", position);
+                    //detect whether device is tablet
+                    if (getResources().getBoolean(R.bool.isTablet)) {
 
-                    startActivity(intent);
+                        //create a new bundle and put the data necessary for playback in it
+                        Bundle args = new Bundle();
+                        ArrayList<Parcelable> tracks = mSpotifyAdapter.getTrackList();
+                        args.putParcelableArrayList("tracks", tracks);
+                        args.putInt("position", position);
+
+                        //instantiate new dialog fragment
+                        DialogFragment dialogFragment = new NowPlayingDialogFragment();
+
+                        dialogFragment.setArguments(args);
+
+                        //show the dialog fragment on a tablet
+                        dialogFragment.show(getActivity().getFragmentManager(), "dialog");
+
+                    } else {
+                        //if the device is not a tablet, simply start and create a new activity
+                        Intent intent = new Intent(getActivity(), NowPlayingActivity.class);
+
+                        ArrayList<Parcelable> tracks = mSpotifyAdapter.getTrackList();
+                        intent.putParcelableArrayListExtra("tracks", tracks);
+                        intent.putExtra("position", position);
+
+                        startActivity(intent);
+                    }
                 }
             }
         });

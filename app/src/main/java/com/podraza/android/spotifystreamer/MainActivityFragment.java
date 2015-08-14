@@ -1,7 +1,10 @@
 package com.podraza.android.spotifystreamer;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Parcelable;
@@ -67,11 +70,20 @@ public class MainActivityFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         Log.d(LOG_TAG, "onCreateView called");
+
+
 
         final Bundle sIS = savedInstanceState;
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -106,16 +118,25 @@ public class MainActivityFragment extends Fragment {
                                             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                                                 Log.d(LOG_TAG, "onItemClick with param: " + mArtistAdapter.getArtistId(position));
 
-                                                //when item in list is clicked, callback to
-                                                //main activity with the parameter chosen
-                                                ((Callback) getActivity())
-                                                        .onItemSelected(mArtistAdapter.getArtistId(position));
+                                                if(!isNetworkAvailable()) {
+                                                    Toast toast = Toast.makeText(
+                                                            getActivity().getApplicationContext(),
+                                                            "No network connection, please try again",
+                                                            Toast.LENGTH_SHORT);
+                                                    toast.show();
+                                                } else {
 
-                                                /**Intent intent = new Intent(getActivity(), TopTenTracksActivity.class);
+                                                    //when item in list is clicked, callback to
+                                                    //main activity with the parameter chosen
+                                                    ((Callback) getActivity())
+                                                            .onItemSelected(mArtistAdapter.getArtistId(position));
 
-                                                intent.putExtra(Intent.EXTRA_TEXT, mArtistAdapter.getArtistId(position));
+                                                    /**Intent intent = new Intent(getActivity(), TopTenTracksActivity.class);
 
-                                                startActivity(intent);**/
+                                                     intent.putExtra(Intent.EXTRA_TEXT, mArtistAdapter.getArtistId(position));
+
+                                                     startActivity(intent);**/
+                                                }
                                             }
                                         }
 
@@ -138,7 +159,10 @@ public class MainActivityFragment extends Fragment {
         return rootView;
     }
 
-
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
 
     /**
      * Created by adampodraza on 6/12/15.
