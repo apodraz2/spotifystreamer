@@ -77,6 +77,7 @@ public class NowPlayingActivityFragment extends Fragment {
         Intent intent = new Intent(getActivity(), MediaPlayerService.class);
         intent.setAction(action);
         intent.putExtra("pURL", pURL);
+        mediaPlayerPosition *= 300;
         intent.putExtra("mediaPlayerPosition", mediaPlayerPosition);
         getActivity().startService(intent);
     }
@@ -90,8 +91,8 @@ public class NowPlayingActivityFragment extends Fragment {
                 seekBar = (SeekBar) getActivity().findViewById(R.id.now_playing_seek_bar);
 
                 mediaPlayerPosition = intent.getIntExtra("position", 0);
-
-                seekBar.setProgress(mediaPlayerPosition/1000);
+                //divide by 300 to make the track playing position match the seekbar
+                seekBar.setProgress(mediaPlayerPosition / 300);
             }
         }
     };
@@ -218,14 +219,18 @@ public class NowPlayingActivityFragment extends Fragment {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+                if(fromUser) {
+                    mediaPlayerPosition = progress;
+                    manageMediaPlayer(ACTION_SEEK);
+                    seekBar.setProgress(progress);
+                }
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
 
-                mediaPlayerPosition = seekBar.getThumbOffset();
-                manageMediaPlayer(ACTION_SEEK);
+                //mediaPlayerPosition = seekBar.getThumbOffset();
+                //manageMediaPlayer(ACTION_SEEK);
             }
 
             @Override

@@ -157,28 +157,21 @@ public class TopTenTracksActivityFragment extends Fragment {
         });
 
         if(getResources().getBoolean(R.bool.isTablet)) {
-            if(savedInstanceState == null && searchParam == null) {
+            if(searchParam == null && savedInstanceState == null) {
                 //if the device is a tablet but there is no searchparam do nothing.
-            } else {
+            } else if(savedInstanceState == null && searchParam != null)  {
                 //otherwise, call the updatespotify method with the searchparam
                 updateSpotify(searchParam);
+            } else {
+                //if savedInstanceState is not equal to null do nothing
             }
         } else {
-            //if the device is not a tablet, call update spotify with the passed intent
-            updateSpotify(getActivity().getIntent().getStringExtra(Intent.EXTRA_TEXT));
-        }
-
-        /**
-        if(sIS == null) {
-            if(searchParam == null) {
+            if (savedInstanceState == null) {
+                //if the device is not a tablet, call update spotify with the passed intent
                 updateSpotify(getActivity().getIntent().getStringExtra(Intent.EXTRA_TEXT));
-            } else if () {
 
-            } else {
-                updateSpotify(searchParam);
             }
-        }**/
-
+        }
         return rootView;
     }
 

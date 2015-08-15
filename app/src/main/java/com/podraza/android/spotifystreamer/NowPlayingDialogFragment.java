@@ -69,7 +69,7 @@ public class NowPlayingDialogFragment extends DialogFragment {
         outState.putParcelableArrayList("tracks", tracks);
         outState.putInt("position", position);
         outState.putInt("mediaPlayerPosition", mediaPlayerPosition);
-        //nullifyMediaPlayer();
+
         super.onSaveInstanceState(outState);
     }
 
@@ -77,6 +77,7 @@ public class NowPlayingDialogFragment extends DialogFragment {
         Intent intent = new Intent(getActivity(), MediaPlayerService.class);
         intent.setAction(action);
         intent.putExtra("pURL", pURL);
+        mediaPlayerPosition *= 300;
         intent.putExtra("mediaPlayerPosition", mediaPlayerPosition);
         getActivity().startService(intent);
     }
@@ -87,11 +88,10 @@ public class NowPlayingDialogFragment extends DialogFragment {
         public void onReceive(Context context, Intent intent) {
 
             if(intent.getAction().equals(MediaPlayerService.CUSTOM_INTENT)) {
-                //seekBar = (SeekBar) getActivity().findViewById(R.id.now_playing_seek_bar);
 
                 mediaPlayerPosition = intent.getIntExtra("position", 0);
 
-                seekBar.setProgress(mediaPlayerPosition/1000);
+                seekBar.setProgress(mediaPlayerPosition/300);
             }
         }
     };
@@ -221,13 +221,18 @@ public class NowPlayingDialogFragment extends DialogFragment {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
+                if(fromUser) {
+                    mediaPlayerPosition = progress;
+                    manageMediaPlayer(ACTION_SEEK);
+                    seekBar.setProgress(progress);
+                }
+
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
 
-                mediaPlayerPosition = seekBar.getThumbOffset();
-                manageMediaPlayer(ACTION_SEEK);
+
             }
 
             @Override

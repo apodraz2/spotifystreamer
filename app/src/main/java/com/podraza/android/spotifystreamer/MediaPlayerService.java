@@ -48,7 +48,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnPrepare
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(LOG_TAG, "onStartCommand");
         if(intent == null) return 0;
         if(intent.getAction().equals(ACTION_PAUSE)) {
             if(mMediaPlayer!= null) {
@@ -84,7 +83,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnPrepare
         if(intent.getAction().equals(ACTION_SEEK)) {
             if(mMediaPlayer != null) {
                 int mediaPlayerPosition = intent.getIntExtra("mediaPlayerPosition", 0);
-                //Log.d(LOG_TAG, "the mediaPlayerPosition is: " + mediaPlayerPosition);
+                //multiply by 300 to make the media player position match the seekbar position
                 mMediaPlayer.seekTo(mediaPlayerPosition);
             }
         }
