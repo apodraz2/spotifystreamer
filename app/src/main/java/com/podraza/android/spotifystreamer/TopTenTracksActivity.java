@@ -34,6 +34,7 @@ public class TopTenTracksActivity extends ActionBarActivity {
                     .add(R.id.track_list_container, fragment)
                     .commit();
         }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
 

@@ -26,7 +26,11 @@
         </activity>
         <activity
             android:name=".TopTenTracksActivity"
-            android:label="@string/title_activity_top_ten_tracks" >
+            android:label="@string/title_activity_top_ten_tracks"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
         </activity>
         <activity
             android:name=".NowPlayingActivity"
